@@ -1,12 +1,26 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router';
 
+interface WeatherData {
+    name: string;
+    main: {
+        temp: number;
+        feels_like: number;
+        humidity: number;
+    };
+    weather: {
+        description: string;
+    }[];
+    wind: {
+        speed: number;
+    };
+}
 
 const WeatherDisplay = () => {
-    const { city } = useParams();
-    const [weather, setWeather] = useState(null);
+    const { city } = useParams<{ city: string }>();
+    const [weather, setWeather] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!city) {
@@ -26,11 +40,15 @@ const WeatherDisplay = () => {
                 if (!response.ok) {
                     throw new Error(`Ошибка HTTP: ${response.status} - ${response.statusText}`);
                 }
-                const data = await response.json();
+                const data: WeatherData = await response.json();
                 setWeather(data);
-            } catch (err) {
+            } catch (err: unknown) {
                 console.error("Ошибка при получении погоды:", err);
-                setError(`Не удалось получить данные о погоде для города "${city}". ${err.message}`);
+                if (err instanceof Error) {
+                    setError(`Не удалось получить данные о погоде для города "${city}". ${err.message}`);
+                } else {
+                    setError(`Не удалось получить данные о погоде для города "${city}". Неизвестная ошибка`);
+                }
             } finally {
                 setLoading(false);
             }
